@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Data Konsumsi Energi</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="container mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4 text-center">Data Konsumsi Energi</h1>
+
+    <!-- Dropdown Pilih MAC Address -->
+    <div class="mb-4 text-center">
+      <label for="mac-select" class="font-semibold mr-2">Pilih MAC Address:</label>
+      <select id="mac-select" class="px-4 py-2 border rounded">
+        <option value="">-- Pilih MAC --</option>
+      </select>
+    </div>
+
+    <!-- Tombol Reset -->
+    <div class="text-center mb-4">
+      <a href="/api/reset-data" class="inline-block px-4 py-2 bg-red-600 text-white font-semibold rounded hover:bg-red-700 transition">Reset Data Konsumsi Energi</a>
+    </div>
+
+    <!-- Tabel Data -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="py-3 px-4 text-left">ID</th>
+            <th class="py-3 px-4 text-left">Tanggal</th>
+            <th class="py-3 px-4 text-left">Waktu</th>
+            <th class="py-3 px-4 text-left">Tegangan</th>
+            <th class="py-3 px-4 text-left">Arus</th>
+            <th class="py-3 px-4 text-left">Daya</th>
+            <th class="py-3 px-4 text-left">KWh</th>
+            <th class="py-3 px-4 text-left">MAC</th>
+          </tr>
+        </thead>
+        <tbody id="data-table" class="divide-y divide-gray-200">
+          <!-- Data akan ditampilkan di sini -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const macSelect = document.getElementById('mac-select');
+    const tableBody = document.getElementById('data-table');
+    let selectedMac = '';
+
+    // Ambil daftar MAC address
+    function fetchMacList() {
+      axios.get('/api/mac-list')
+        .then(response => {
+          const macs = response.data;
+          macSelect.innerHTML = '<option value="">-- Pilih MAC --</option>';
+          macs.forEach(mac => {
+            const option = document.createElement('option');
+            option.value = mac.mac_address;
+            option.textContent = mac.mac_address;
+            macSelect.appendChild(option);
+          });
+        })
+        .catch(error => {
+          console.error('Gagal mengambil daftar MAC:', error);
+        });
+    }
+
+    // Ambil data berdasarkan MAC yang dipilih
+  
+    function fetchData() {
+  if (!selectedMac) return;
+
+  axios.get('/api/data?mac=' + encodeURIComponent(selectedMac))
+    .then(response => {
+      const rows = response.data;
+      tableBody.innerHTML = '';
+
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-gray-100";
+        tr.innerHTML = `
+          <td class="py-2 px-4">${row.id}</td>
+          <td class="py-2 px-4">${row.tanggal}</td>
+          <td class="py-2 px-4">${row.waktu}</td>
+          <td class="py-2 px-4">${row.tegangan}</td>
+          <td class="py-2 px-4">${row.arus}</td>
+          <td class="py-2 px-4">${row.daya}</td>
+          <td class="py-2 px-4">${row.kwh}</td>
+          <td class="py-2 px-4">${row.mac_address}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    })
+    .catch(error => {
+      console.error('Gagal mengambil data:', error);
+    });
+}
+
+    // Event saat dropdown berubah
+    macSelect.addEventListener('change', () => {
+      selectedMac = macSelect.value;
+      fetchData();
+    });
+
+    // Inisialisasi
+    fetchMacList();
+    setInterval(fetchData, 2000);
+  </script>
+</body>
+</html>
